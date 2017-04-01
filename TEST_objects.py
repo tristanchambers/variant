@@ -1,13 +1,14 @@
 from pprint import pformat
 import yaml
+import pickle
 
-class Tristate(object):
+class Tristate:
     class On: pass
     class Off: pass
     class Unset: pass
 
-class Bar:
-    "A single bar, aka measure of musical notation"
+class Measure:
+    "A single measure, aka bar of musical notation"
     def __init__(self, name, number_of_steps, default=Tristate.Off):
         self.name = name
         self.content = []
@@ -40,38 +41,29 @@ class Bar:
         return self.name
 
     def make_variation(self):
-        new_bar = Bar(self.get_name() + '-' + "variant-%s" % len(self.variations), self.get_length(), default=Tristate.Unset)
-        self.variations.append(new_bar)
-        return new_bar
+        new_measure = Measure(self.get_name() + '-' + "variant-%s" % len(self.variations), self.get_length(), default=Tristate.Unset)
+        self.variations.append(new_measure)
+        return new_measure
 
     def get_variations(self):
         return self.variations
 
-def diff_bars(basebar, variation):
-    "Merge a Bar and a Variation. Returns a new Bar with merged product."
+def merge_measures(basemeasure, variation):
+    "Merge a Measure and a Variation. Returns a new Measure with merged product."
 
-    product = Bar(basebar.get_name() + '-' + variation.get_name(), basebar.get_length())
+    product = Measure(basemeasure.get_name() + '-' + variation.get_name(), basemeasure.get_length())
 
-    for step in range(basebar.get_length()):
+    for step in range(basemeasure.get_length()):
         if not variation.content[step] == Tristate.Unset:
             product.set_note(step, variation.get_note(step))
         else:
-            product.set_note(step, basebar.get_note(step))
+            product.set_note(step, basemeasure.get_note(step))
 
     return product
 
-mybar = Bar('mybar', 3)
-myvariation = mybar.make_variation()
-
-mybar.set_note(0, Tristate.On)
-myvariation.set_note(0, Tristate.Off)
-myvariation.set_note(2, Tristate.On)
-
-myproduct = diff_bars(mybar, myvariation)
-
-def export_yaml(bar):
+def export_measure(measure):
     flat_content = []
-    for note in bar.get_contents():
+    for note in measure.get_contents():
         if note == Tristate.On:
             flat_content.append(True)
         elif note == Tristate.Off:
@@ -81,9 +73,26 @@ def export_yaml(bar):
         else:
             flat_content.append('Unknown')
             raise
-    return yaml.dump({bar.name: {'type':type(bar).__name__, 'content': flat_content}}, default_flow_style=False)
+    return yaml.dump({measure.name: {'type':type(measure).__name__, 'content': flat_content}}, default_flow_style=False)
 
-print(export_yaml(mybar))
-print(export_yaml(myvariation))
+def main():
+    mymeasure = Measure('mymeasure', 8)
+    myvariation = mymeasure.make_variation()
 
-import pdb; pdb.set_trace()
+    mymeasure.set_note(0, Tristate.On)
+    myvariation.set_note(0, Tristate.Off)
+    myvariation.set_note(2, Tristate.On)
+
+    myproduct = merge_measures(mymeasure, myvariation)
+
+#    output = open('data.pkl', 'wb')
+#    pickle.dump(mymeasure, output)
+#    output.close()
+
+    print(export_measure(mymeasure))
+    print(export_measure(myvariation))
+    import pdb; pdb.set_trace()
+#    print(yaml.load(yaml.dump(mymeasure, default_flow_style=False)))
+
+if __name__ == '__main__':
+    main()
