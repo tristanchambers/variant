@@ -117,6 +117,13 @@ class Part:
             self.base_measure = base_measure
             self.variations = Part.Bar.Stack()
 
+        def __repr__(self):
+            description = ''
+            description = description + self.get_base_measure().get_name()
+            for variation in self.get_variations():
+                description = description + ' + ' + variation.get_name()
+            return description
+
         def set_base_measure(self, measure):
             if type(measure) == type(Measure('blank')):
                 self.base_measure = measure
@@ -128,6 +135,12 @@ class Part:
                 self.variations.append(variation)
             else:
                 raise "Not a MeasureVariation"
+
+        def get_variations(self):
+            return self.variations
+
+        def get_base_measure(self):
+            return self.base_measure
 
 def main():
     mypart = Part()
