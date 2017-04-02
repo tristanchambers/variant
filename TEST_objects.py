@@ -3,12 +3,13 @@ import yaml
 import pickle
 
 class Tristate:
+    """States that allow both on off as well as unset steps of a Measure"""
     class On: pass
     class Off: pass
     class Unset: pass
 
 class Measure:
-    "A single measure, aka bar of musical notation"
+    "A single measure musical notation"
     def __init__(self, name, number_of_steps=16, default=Tristate.Off):
         self.name = name
         self.content = []
@@ -41,12 +42,28 @@ class Measure:
         return self.name
 
     def make_variation(self):
-        new_measure = Measure(self.get_name() + '-' + "variant-%s" % len(self.variations), self.get_length(), default=Tristate.Unset)
+        """
+        Makes a variation associated with the base Measure. The associated
+        variations do not apply or modify the base Measure until they are loaded
+        in a Part.Bar
+        """
+        new_measure = MeasureVariation(self.get_name() + '-' + "variant-%s" % len(self.variations), self.get_length(), default=Tristate.Unset)
         self.variations.append(new_measure)
         return new_measure
 
     def get_variations(self):
         return self.variations
+
+class MeasureVariation(Measure):
+    """
+    Different only in name to a Measure, except that by convention the initial
+    contents are set to Unset.
+    The make_variation method in Measure is the intended way to make a
+    MeasureVariation. This will associate it with the base Measure.
+    """
+
+    def make_variation(self):
+        raise "Use the method in Measure instead"
 
 def merge_measures(basemeasure, variation):
     "Merge a Measure and a Variation. Returns a new Measure with merged product."
@@ -75,11 +92,10 @@ def export_measure(measure):
             raise
     return yaml.dump({measure.name: {'type':type(measure).__name__, 'content': flat_content}}, default_flow_style=False)
 
-class Stack(list):
-    def move(self, from_index, to_index):
-        self.insert(to_index, self.pop(from_index))
-
 class Part:
+    """
+    A sequence of Bars
+    """
     def __init__(self, number_of_bars=4):
         self.name = ''
         self.content = []
@@ -90,9 +106,16 @@ class Part:
         return pformat(self.content)
 
     class Bar:
+        """
+        A position in the Part which comprises a base Measure and modifying variations
+        """
+        class Stack(list):
+            def move(self, from_index, to_index):
+                self.insert(to_index, self.pop(from_index))
+
         def __init__(self, base_measure=Measure('blank measure')):
             self.base_measure = base_measure
-            self.variations = Stack()
+            self.variations = Part.Bar.Stack()
 
         def set_base_measure(self, measure):
             if type(measure) == type(Measure('blank')):
@@ -100,11 +123,11 @@ class Part:
             else:
                 raise
 
-        def add_variation(self, measure):
-            if type(measure) == type(Measure('blank')):
-                self.variations.append(measure)
+        def add_variation(self, variation):
+            if type(variation) == type(MeasureVariation('blank')):
+                self.variations.append(variation)
             else:
-                raise
+                raise "Not a MeasureVariation"
 
 def main():
     mypart = Part()
