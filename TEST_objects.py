@@ -1,4 +1,4 @@
-from pprint import pformat
+from pprint import pformat, pprint
 import yaml
 import pickle
 
@@ -54,6 +54,20 @@ class Measure:
     def get_variations(self):
         return self.variations
 
+    def apply_variation(self, variation):
+        "Merge a Measure and a Variation. Returns a new Measure with merged product."
+
+        product = Measure(self.get_name() + '-' + variation.get_name(), self.get_length())
+
+        for step in range(self.get_length()):
+            if not variation.content[step] == Tristate.Unset:
+                product.set_note(step, variation.get_note(step))
+            else:
+                product.set_note(step, self.get_note(step))
+
+        return product
+
+
 class MeasureVariation(Measure):
     """
     Different only in name to a Measure, except that by convention the initial
@@ -64,19 +78,6 @@ class MeasureVariation(Measure):
 
     def make_variation(self):
         raise "Use the method in Measure instead"
-
-def merge_measures(basemeasure, variation):
-    "Merge a Measure and a Variation. Returns a new Measure with merged product."
-
-    product = Measure(basemeasure.get_name() + '-' + variation.get_name(), basemeasure.get_length())
-
-    for step in range(basemeasure.get_length()):
-        if not variation.content[step] == Tristate.Unset:
-            product.set_note(step, variation.get_note(step))
-        else:
-            product.set_note(step, basemeasure.get_note(step))
-
-    return product
 
 def export_measure(measure):
     flat_content = []
@@ -104,6 +105,9 @@ class Part:
 
     def __repr__(self):
         return pformat(self.content)
+
+    def render(self):
+        pass
 
     class Bar:
         """
@@ -158,16 +162,18 @@ def main():
 
     mypart.content[3].add_variation(myvariation)
 
-    myproduct = merge_measures(mybasemeasure, myvariation)
+    myproduct = mybasemeasure.apply_variation(myvariation)
 
 #    output = open('data.pkl', 'wb')
 #    pickle.dump(mymeasure, output)
 #    output.close()
 
-    print(export_measure(mybasemeasure))
-    print(export_measure(myvariation))
-    print(export_measure(myproduct))
+#    print(export_measure(mybasemeasure))
+#    print(export_measure(myvariation))
+#    print(export_measure(myproduct))
 #    print(yaml.load(yaml.dump(mymeasure, default_flow_style=False)))
+    pprint(mypart)
+
     import pdb; pdb.set_trace()
 
 if __name__ == '__main__':
