@@ -1,12 +1,17 @@
 from pprint import pformat, pprint
-import yaml
-import pickle
 
 class Tristate:
     """States that allow both on off as well as unset steps of a Measure"""
     class On: pass
     class Off: pass
     class Unset: pass
+
+class Stack(list):
+    """
+    An ordered sequence (python list with helper method to move items around
+    """
+    def move(self, from_index, to_index):
+        self.insert(to_index, self.pop(from_index))
 
 class Measure:
     "A single measure of musical notation"
@@ -78,20 +83,6 @@ class MeasureVariation(Measure):
     def make_variation(self):
         raise "Use the method in Measure instead"
 
-def export_measure(measure):
-    flat_content = []
-    for note in measure.get_contents():
-        if note == Tristate.On:
-            flat_content.append(True)
-        elif note == Tristate.Off:
-            flat_content.append(False)
-        elif note == Tristate.Unset:
-            flat_content.append(None)
-        else:
-            flat_content.append('Unknown')
-            raise
-    return yaml.dump({measure.name: {'type':type(measure).__name__, 'content': flat_content}}, default_flow_style=False)
-
 class Part:
     """
     A sequence of Bars
@@ -128,15 +119,12 @@ class Part:
 
     class Bar:
         """
-        A position in the Part which comprises a base Measure and modifying variations
+        A position in a Part which comprises a base Measure and modifying variations
         """
-        class Stack(list):
-            def move(self, from_index, to_index):
-                self.insert(to_index, self.pop(from_index))
 
         def __init__(self, base_measure=Measure('blank measure')):
             self.base_measure = base_measure
-            self.variations = Part.Bar.Stack()
+            self.variations = Stack()
 
         def __repr__(self):
             description = ''
@@ -169,6 +157,27 @@ class Part:
                 product = product.apply_variation(variation)
             return Part.Bar(base_measure=product)
 
+class Composition:
+    """
+    A sequence of Parts
+    """
+    def __init__(self):
+        contents = Stack()
+
+    def add_part(self, part):
+        if type(part) == type(Part()):
+            self.content.append(part)
+        else:
+            raise
+
+    def remove_part(self, part):
+        # TODO
+        pass
+
+    def move_part(self, from_index, to_index):
+        # TODO
+        pass
+
 def main():
     mypart = Part()
     mybasemeasure = mypart.content[0].base_measure
@@ -187,15 +196,8 @@ def main():
 
     myproduct = mybasemeasure.apply_variation(myvariation)
 
-#    output = open('data.pkl', 'wb')
-#    pickle.dump(mymeasure, output)
-#    output.close()
-
-#    print(export_measure(mybasemeasure))
-#    print(export_measure(myvariation))
-#    print(export_measure(myproduct))
-#    print(yaml.load(yaml.dump(mymeasure, default_flow_style=False)))
     pprint(mypart)
+    pprint(mypart.render().get_contents()[3].get_base_measure())
 
     import pdb; pdb.set_trace()
 
