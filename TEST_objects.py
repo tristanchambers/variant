@@ -9,7 +9,7 @@ class Tristate:
     class Unset: pass
 
 class Measure:
-    "A single measure musical notation"
+    "A single measure of musical notation"
     def __init__(self, name, number_of_steps=16, default=Tristate.Off):
         self.name = name
         self.content = []
@@ -67,7 +67,6 @@ class Measure:
 
         return product
 
-
 class MeasureVariation(Measure):
     """
     Different only in name to a Measure, except that by convention the initial
@@ -101,13 +100,31 @@ class Part:
         self.name = ''
         self.content = []
         for _ in range(number_of_bars):
-            self.content.append(Part.Bar())
+            self.add_bar(Part.Bar())
 
     def __repr__(self):
         return pformat(self.content)
 
+    def get_number_of_bars(self):
+        return self.number_of_bars
+
+    def get_contents(self):
+        return self.content
+
+    def add_bar(self, bar):
+        if type(bar) == type(Part.Bar()):
+            self.content.append(bar)
+        else:
+            raise
+
     def render(self):
-        pass
+        """
+        Return a flattened version of the Part which has all the variations merged.
+        """
+        product = Part(number_of_bars=0)
+        for bar in self.get_contents():
+            product.add_bar(bar.render())
+        return product
 
     class Bar:
         """
@@ -145,6 +162,12 @@ class Part:
 
         def get_base_measure(self):
             return self.base_measure
+
+        def render(self):
+            product = self.get_base_measure()
+            for variation in self.get_variations():
+                product = product.apply_variation(variation)
+            return Part.Bar(base_measure=product)
 
 def main():
     mypart = Part()
