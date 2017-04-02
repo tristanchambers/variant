@@ -83,32 +83,44 @@ class Part:
     def __init__(self, number_of_bars=4):
         self.name = ''
         self.content = []
-        new_measure = Measure('blank measure')
         for _ in range(number_of_bars):
-            self.content.append({'base_measure': new_measure, 'variations': Stack()})
+            self.content.append(Part.Bar())
+
     def __repr__(self):
         return pformat(self.content)
 
-    def set_base_measure(self, bar_number, measure):
-        if type(measure) == type(Measure('blank')):
-            self.content[bar_number]['base_measure'] = measure
-        else:
-            raise
+    class Bar:
+        def __init__(self, base_measure=Measure('blank measure')):
+            self.base_measure = base_measure
+            self.variations = Stack()
+
+        def set_base_measure(self, measure):
+            if type(measure) == type(Measure('blank')):
+                self.base_measure = measure
+            else:
+                raise
+
+        def add_variation(self, measure):
+            if type(measure) == type(Measure('blank')):
+                self.variations.append(measure)
+            else:
+                raise
 
 def main():
     mypart = Part()
-    mybasemeasure = mypart.content[0]['base_measure']
-
+    mybasemeasure = mypart.content[0].base_measure
 
     mybasemeasure.set_note(0, Tristate.On)
     mynewmeasure = Measure('other measure')
-    mypart.set_base_measure(2, mynewmeasure)
+    mypart.content[2].set_base_measure(mynewmeasure)
     mynewmeasure.set_note(7,Tristate.On)
     mynewmeasure.set_note(8,Tristate.On)
 
     myvariation = mybasemeasure.make_variation()
     myvariation.set_note(0, Tristate.Off)
     myvariation.set_note(2, Tristate.On)
+
+    mypart.content[3].add_variation(myvariation)
 
     myproduct = merge_measures(mybasemeasure, myvariation)
 
@@ -119,8 +131,8 @@ def main():
     print(export_measure(mybasemeasure))
     print(export_measure(myvariation))
     print(export_measure(myproduct))
-    import pdb; pdb.set_trace()
 #    print(yaml.load(yaml.dump(mymeasure, default_flow_style=False)))
+    import pdb; pdb.set_trace()
 
 if __name__ == '__main__':
     main()
