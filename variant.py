@@ -1,14 +1,32 @@
 from pprint import pformat, pprint
 
 class Tristate:
-    """States that allow both on off as well as unset steps of a Measure"""
+    """
+    States that allow both on off as well as unset steps of
+    a Measure.
+
+    Examples:
+    >>> Tristate.On == Tristate.Off
+    False
+
+    >>> Tristate.Off == Tristate.Unset
+    False
+
+    >>> Tristate.On == Tristate.On
+    True
+
+    >>> Tristate.Unset == Tristate.Unset
+    True
+
+    """
     class On: pass
     class Off: pass
     class Unset: pass
 
 class Stack(list):
     """
-    An ordered sequence (python list with helper method to move items around
+    An ordered sequence (python list with helper method to move items
+    around
     """
     def move(self, from_index, to_index):
         self.insert(to_index, self.pop(from_index))
@@ -48,9 +66,9 @@ class Measure:
 
     def make_variation(self):
         """
-        Makes a variation associated with the base Measure. The associated
-        variations do not apply or modify the base Measure until they are loaded
-        in a Part.Bar
+        Makes a variation associated with the base Measure. The
+        associated variations do not apply or modify the base Measure
+        until they are loaded in a Part.Bar
         """
         new_measure = MeasureVariation(self.get_name() + '-' + "variant-%s" % len(self.variations), self.get_length(), default=Tristate.Unset)
         self.variations.append(new_measure)
@@ -60,7 +78,10 @@ class Measure:
         return self.variations
 
     def apply_variation(self, variation):
-        "Merge a Measure and a Variation. Returns a new Measure with merged product."
+        """
+        Merge a Measure and a Variation. Returns a new Measure with
+        merged product.
+        """
 
         product = Measure(self.get_name() + '-' + variation.get_name(), self.get_length())
 
@@ -74,8 +95,8 @@ class Measure:
 
 class MeasureVariation(Measure):
     """
-    Different only in name to a Measure, except that by convention the initial
-    contents are set to Unset.
+    Different only in name to a Measure, except that by convention
+    the initial contents are set to Unset.
     The make_variation method in Measure is the intended way to make a
     MeasureVariation. This will associate it with the base Measure.
     """
@@ -110,7 +131,8 @@ class Part:
 
     def render(self):
         """
-        Return a flattened version of the Part which has all the variations merged.
+        Return a flattened version of the Part which has all the
+        variations merged.
         """
         product = Part(number_of_bars=0)
         for bar in self.get_contents():
@@ -119,7 +141,8 @@ class Part:
 
     class Bar:
         """
-        A position in a Part which comprises a base Measure and modifying variations
+        A position in a Part which comprises a base Measure and
+        modifying variations
         """
 
         def __init__(self, base_measure=Measure('blank measure')):
@@ -152,6 +175,10 @@ class Part:
             return self.base_measure
 
         def render(self):
+            """
+            Apply variations associated with the base mesaure, as
+            indicated in the Bar.
+            """
             product = self.get_base_measure()
             for variation in self.get_variations():
                 product = product.apply_variation(variation)
@@ -177,29 +204,3 @@ class Composition:
     def move_part(self, from_index, to_index):
         # TODO
         pass
-
-def main():
-    mypart = Part()
-    mybasemeasure = mypart.content[0].base_measure
-
-    mybasemeasure.set_note(0, Tristate.On)
-    mynewmeasure = Measure('other measure')
-    mypart.content[2].set_base_measure(mynewmeasure)
-    mynewmeasure.set_note(7,Tristate.On)
-    mynewmeasure.set_note(8,Tristate.On)
-
-    myvariation = mybasemeasure.make_variation()
-    myvariation.set_note(0, Tristate.Off)
-    myvariation.set_note(2, Tristate.On)
-
-    mypart.content[3].add_variation(myvariation)
-
-    myproduct = mybasemeasure.apply_variation(myvariation)
-
-    pprint(mypart)
-    pprint(mypart.render().get_contents()[3].get_base_measure())
-
-    import pdb; pdb.set_trace()
-
-if __name__ == '__main__':
-    main()
