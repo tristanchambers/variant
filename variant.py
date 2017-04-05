@@ -1,6 +1,7 @@
 from pprint import pformat, pprint
+from enum import Enum
 
-class Tristate:
+class Tristate(Enum):
     """
     States that allow both on off as well as unset steps of
     a Measure.
@@ -19,9 +20,9 @@ class Tristate:
     True
 
     """
-    class On: pass
-    class Off: pass
-    class Unset: pass
+    On = 1
+    Off = 2
+    Unset = 3
 
 class Stack(list):
     """
